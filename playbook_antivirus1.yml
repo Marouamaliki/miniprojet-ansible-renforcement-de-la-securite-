@@ -1,0 +1,30 @@
+---
+- name: Installer et configurer ClamAV sur les serveurs
+  hosts: dbservers
+  become: yes
+  tasks:
+    - name: Mettre à jour les paquets système
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Installer ClamAV et son démon
+      apt:
+        name:
+          - clamav
+          - clamav-daemon
+        state: present
+
+    - name: Mettre à jour la base de données de ClamAV
+      command: freshclam
+      ignore_errors: yes
+
+    - name: Scanner tout le système à la recherche de virus
+      command: clamscan -r / --bell
+      register: scan_result
+      changed_when: false
+
+    - name: Afficher les résultats de l'analyse
+      debug:
+        msg: "{{ scan_result.stdout }}"
+

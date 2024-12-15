@@ -1,0 +1,42 @@
+---
+- name: Configuration réseau pour les serveurs web
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Install UFW
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: Enable UFW service
+      ansible.builtin.ufw:
+        state: enabled
+
+    - name: Allow SSH through firewall
+      ansible.builtin.ufw:
+        rule: allow
+        port: 22
+        proto: tcp
+
+    - name: Allow HTTP connections (port 80)
+      ansible.builtin.ufw:
+        rule: allow
+        port: 80
+        proto: tcp
+
+    - name: Allow HTTPS connections (port 443)
+      ansible.builtin.ufw:
+        rule: allow
+        port: 443
+        proto: tcp
+
+    - name: Set default incoming policy to deny
+      ansible.builtin.ufw:
+        default: deny
+        direction: incoming
+
+    - name: Set default outgoing policy to allow
+      ansible.builtin.ufw:
+        default: allow
+        direction: outgoing
+

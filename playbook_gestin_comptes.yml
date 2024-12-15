@@ -1,0 +1,23 @@
+---
+hosts: all
+become: yes
+tasks:
+  - name: Create users
+    user:
+      name: "{{ item.name }}"
+      password: "{{ item.password }}"
+      groups: "{{ item.groups }}"
+      shell: "{{ item.shell | default('/bin/bash') }}"
+      state: present
+    with_items:
+      - { name: "alice", password: "$6$rounds=656000$ABCDEFGH$H1wp7Kv2pBQ9ZTR1dtFxS8JrB1L", groups: "sudo,developers", shell: "/bin/bash" }
+      - { name: "bob", password: "$6$rounds=656000$ZYXWVUT$JJrk2bjt5Zs5lIkwmjA9vMTg2rGGKj3Fz4L", groups: "sudo,developers", shell: "/bin/bash" }
+      - { name: "charlie", password: "$6$rounds=656000$MNOPQRST$w6lFZ5rOsxwxtcQg38kS8MRh6z9clow2gI", groups: "users", shell: "/bin/bash" }
+      - { name: "dave", password: "$6$rounds=656000$STUVWXYZ$hRSkB1dH0uAqIUxl63lGpH7ttoJlQUvwr1", groups: "users", shell: "/bin/bash" }
+
+  - name: Delete user
+    user:
+      name: "{{ item.name }}"
+      state: absent
+    with_items:
+      - { name: "alice" }

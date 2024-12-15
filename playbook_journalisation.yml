@@ -1,0 +1,22 @@
+---
+- name: Journalisation des modifications et création de rapports
+  hosts: all
+  become: yes
+  tasks:
+    - name: Appliquer une politique de sécurité (par exemple, désactiver la connexion root via SSH)
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+      register: result
+
+    - name: Journaliser les modifications
+      ansible.builtin.copy:
+        content: "Modification de la configuration SSH: {{ result }}"
+        dest: "/var/log/ansible/security_changes.log"
+        append: yes
+
+    - name: Générer un rapport de conformité
+      ansible.builtin.template:
+        src: "conformity_report.j2"
+        dest: "/var/log/ansible/conformity_report.txt"

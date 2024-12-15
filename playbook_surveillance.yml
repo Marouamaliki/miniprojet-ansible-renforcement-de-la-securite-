@@ -1,0 +1,33 @@
+---
+- name: Vérification de la conformité de la configuration
+  hosts: all
+  become: yes
+  tasks:
+    - name: Vérifier si le service SSH est en cours d'exécution
+      ansible.builtin.systemd:
+        name: sshd
+        state: started
+      register: ssh_status
+
+    - name: Vérifier si le pare-feu est activé
+      ansible.builtin.ufw:
+        state: enabled
+      register: ufw_status
+
+    - name: Vérification de la configuration du fichier /etc/ssh/sshd_config
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+      register: sshd_config_file
+
+    - name: Vérifier la présence du fichier /etc/ssh/sshd_config avec la configuration correcte
+      ansible.builtin.command:
+        cmd: "grep -i '^PermitRootLogin no' /etc/ssh/sshd_config"
+      register: sshd_config_check
+      failed_when: sshd_config_check.rc != 0
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Signaler des écarts de conformité
+      ansible.builtin.debug:
+        msg: "Ecarts détectés: SSH status: {{ ssh_status }}, UFW status: {{ ufw_status }}, SSH config: {{ sshd_config_check }}"
+      when: ssh_status.failed or ufw_status.failed or sshd_config_check.failed

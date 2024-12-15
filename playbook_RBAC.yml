@@ -1,0 +1,67 @@
+---
+- name: Configure RBAC for sensitive files and commands
+  hosts: all
+  become: yes
+
+  vars:
+    sensitive_files:
+      - "/etc/passwd"
+      - "/etc/shadow"
+      - "/var/log/app.log"
+    sudo_commands:
+      developers: "/bin/cat /var/log/app.log"
+      operators: "/usr/bin/systemctl restart nginx"
+
+  tasks:
+    # Create groups for roles
+    - name: Ensure 'admin', 'developers', and 'operators' groups exist
+      group:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - admin
+        - developers
+        - operators
+
+    # Ensure users are assigned to groups
+    - name: Assign users to groups
+      user:
+        name: "{{ item.name }}"
+        groups: "{{ item.groups }}"
+        append: yes
+      with_items:
+        - { name: "alice", groups: "developers" }
+        - { name: "bob", groups: "operators" }
+        - { name: "charlie", groups: "admin" }
+
+    # Restrict access to sensitive files
+    - name: Configure permissions for sensitive files
+      file:
+        path: "{{ item }}"
+        owner: root
+        group: admin
+        mode: 0640
+      loop: "{{ sensitive_files }}"
+
+    # Configure sudo permissions for groups
+    - name: Set sudo permissions for developers
+      lineinfile:
+        path: /etc/sudoers.d/developers
+        create: yes
+        line: "%developers ALL=(ALL) NOPASSWD: {{ sudo_commands.developers }}"
+
+    - name: Set sudo permissions for operators
+      lineinfile:
+        path: /etc/sudoers.d/operators
+        create: yes
+        line: "%operators ALL=(ALL) NOPASSWD: {{ sudo_commands.operators }}"
+
+    # Ensure operators can't access sensitive files
+    - name: Deny operators access to sensitive files
+      acl:
+        path: "{{ item }}"
+        entity: operators
+        etype: group
+        permissions: '---'
+        state: present
+      loop: "{{ sensitive_files }}"

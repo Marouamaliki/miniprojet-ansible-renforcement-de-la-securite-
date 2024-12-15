@@ -1,0 +1,17 @@
+---
+- name: Configuration des serveurs web
+  hosts: webservers
+  tasks:
+    - name: Installer un serveur HTTP
+      apt:
+        name: apache2
+        state: present
+
+- name: Configuration des serveurs de bases de données
+  hosts: dbservers
+  tasks:
+    - name: Installer MySQL
+      apt:
+        name: mysql-server
+        state: present
+
